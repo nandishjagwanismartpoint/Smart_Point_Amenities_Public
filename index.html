@@ -302,18 +302,113 @@ const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, ch => ({'&':'&am
 const fmtScope = s => !s ? '' : s.split(',').map(p => p.trim()).filter(Boolean).map(p => /^ALL /.test(p) ? 'All ' + p.slice(4) : p.charAt(0) + p.slice(1).toLowerCase()).join(', ');
 const plural = (n, one, many) => n + ' ' + (n === 1 ? one : many);
 
-const MARKETS = [{ id:'UK', name:'United Kingdom' }, { id:'ES', name:'Spain' }].map(m => {
+const ES_TR = {
+ "Assistance": "Asistencia",
+ "Lifestyle": "Estilo de vida",
+ "Kids": "Niños",
+ "Pets": "Mascotas",
+ "Mobility": "Movilidad",
+ "Food": "Alimentación",
+ "Corporate Amenities": "Servicios corporativos",
+ "Psicologia": "Psicología",
+ "Lavanderia": "Lavandería",
+ "Tintoreria": "Tintorería",
+ "FIIT Workout App": "App de entrenamiento FIIT",
+ "Preply ES": "Preply",
+ "Local Events": "Eventos locales",
+ "Multi-Gym Pass": "Pase multigimnasio",
+ "Wellhub Subscription (ES)": "Suscripción Wellhub",
+ "Movie Theatre Tickets Madrid": "Entradas de cine en Madrid",
+ "Padel Court Reservation": "Reserva de pistas de pádel",
+ "Massage in Spa (Rest of Spain)": "Masaje en spa (resto de España)",
+ "Brooklyn Fitboxing Subscription": "Suscripción a Brooklyn Fitboxing",
+ "Masaje en Spa (BCN only)": "Masaje en spa (solo BCN)",
+ "Masaje Localizado (BCN only)": "Masaje localizado (solo BCN)",
+ "Masaje en Pareja (BCN only)": "Masaje en pareja (solo BCN)",
+ "Canteen": "Comedor",
+ "Fruit Box Delivery": "Cajas de fruta a domicilio",
+ "Wolly Amenity (Placeholder)": "Servicio Wolly (provisional)",
+ "Book online / offline sessions with nutritionists": "Reserva sesiones online o presenciales con nutricionistas",
+ "Book a session with physiotherapists": "Reserva una sesión con fisioterapeutas",
+ "Book online / offline sessions with psychologists": "Reserva sesiones online o presenciales con psicólogos",
+ "Book online sessions with psychologists": "Reserva sesiones online con psicólogos",
+ "Laundry pick-up and delivered to your door": "Recogida y entrega de tu ropa en la puerta de casa",
+ "Book various cleaning services": "Reserva distintos servicios de limpieza",
+ "Tax and accounting advisory services": "Servicios de asesoría fiscal y contable",
+ "Subscription to a workout app with a video library": "Suscripción a una app de entrenamiento con biblioteca de vídeos",
+ "Online one-on-one language learning classes": "Clases particulares de idiomas online",
+ "Buy gift cards for travel / experiences in Europe": "Compra tarjetas regalo de viajes y experiencias en Europa",
+ "AI Conversational language learning subscription": "Suscripción de aprendizaje de idiomas con IA conversacional",
+ "Composite feed of events happening in your city": "Agenda de eventos que ocurren en tu ciudad",
+ "Subscription to one gym-pass with multiple partner gyms": "Suscripción a un único pase para varios gimnasios asociados",
+ "Buy vouchers for local movie theatres": "Compra vales para cines locales",
+ "Reserve nearby padel courts": "Reserva pistas de pádel cercanas",
+ "Full body massage in a Spa": "Masaje de cuerpo completo en un spa",
+ "Light or localized short massage in Spa": "Masaje breve, ligero o localizado, en un spa",
+ "Couples massage in a Spa": "Masaje en pareja en un spa",
+ "Subscription to Fitboxing classes": "Suscripción a clases de fitboxing",
+ "Chauffeured travel to / from airports": "Traslados con conductor desde y hacia aeropuertos",
+ "Home Moving Services": "Servicios de mudanza",
+ "Mobility Subscription - bicycles, bikes and scooters": "Suscripción de movilidad: bicicletas, motos y patinetes",
+ "Car wash, cleaning and detailing": "Lavado, limpieza y detailing de coches",
+ "Car detailing, cleaning and inspection": "Detailing, limpieza e inspección de coches",
+ "Catering services for a group": "Servicios de catering para grupos",
+ "Canteen services for individuals": "Servicios de comedor para particulares",
+ "Cooked meal boxes delivered to your door": "Cajas de comida cocinada a domicilio",
+ "Recurring fruit box delivery to your doorstep": "Entrega periódica de cajas de fruta a domicilio",
+ "Local Commerce Offers": "Ofertas de comercio local",
+ "Book team building events": "Reserva eventos de team building",
+ "Home repairs and maintenance services": "Servicios de reparaciones y mantenimiento del hogar",
+ "Exclusive prices": "Precios exclusivos",
+ "None": "Ninguno",
+ "Not specified": "No especificado",
+ "65% off monthly subscription": "65 % de descuento en la suscripción mensual",
+ "70% off trial lesson": "70 % de descuento en la clase de prueba",
+ "15% off for orders equal or superior to €49.90": "15 % de descuento en pedidos de 49,90 € o más",
+ "25% off annual plans": "25 % de descuento en planes anuales",
+ "40% off": "40 % de descuento",
+ "B2B rates (Over 40%)": "Tarifas B2B (más del 40 %)",
+ "30% off off-peak hours": "30 % de descuento en horas valle",
+ "€5 discount on their trial session ; €10 discount on their membership sign-up ; €5 discount on every recurring monthly membership fee": "5 € de descuento en la sesión de prueba ; 10 € de descuento en el alta de socio ; 5 € de descuento en cada cuota mensual",
+ "€20 / £20 off order": "20 € de descuento en el pedido",
+ "Upto 74% off": "Hasta un 74 % de descuento",
+ "B2B Prices": "Precios B2B",
+ "5% on first 50 orders": "5 % en los primeros 50 pedidos",
+ "20€ off first order": "20 € de descuento en el primer pedido",
+ "25% off first order": "25 % de descuento en el primer pedido",
+ "10% off partner brands": "10 % de descuento en marcas asociadas",
+ "Exclusive B2B rates": "Tarifas B2B exclusivas",
+ "B2B Discounted Rates": "Tarifas B2B con descuento"
+};
+const SETUP_ES = {"Direct Orders": "Pedidos directos", "External Orders": "Pedidos externos", "Subscription": "Suscripción", "Feed": "Feed", "Corporate Referral": "Referido corporativo"};
+const ES_SCOPE = { 'ALL ES':'Toda España', 'MALAGA':'Málaga', 'SEVILLE':'Sevilla' };
+const fmtScopeEs = s => !s ? '' : s.split(',').map(p => p.trim()).filter(Boolean).map(p => ES_SCOPE[p] || (p.charAt(0) + p.slice(1).toLowerCase())).join(', ');
+const plEs = (n, one, many) => n + ' ' + (n === 1 ? one : many);
+const UI = {
+  en: { plP: n => plural(n,'partner','partners'), plA: n => plural(n,'amenity','amenities'),
+    overview: m => plural(m.count,'amenity','amenities')+' from '+plural(m.partners,'partner','partners')+' across '+m.categories.length+' categories',
+    zoomOut:'Zoom out', closeChart:'Close chart', close:'Close', aria: n => n+' amenities sunburst', category:'Category', ovr:'Overview',
+    select:'Select a category or amenity', benefit:'User benefit', scope:'Geographic scope', scopeFmt: fmtScope, setup: k => k },
+  es: { plP: n => plEs(n,'socio','socios'), plA: n => plEs(n,'servicio','servicios'),
+    overview: m => plEs(m.count,'servicio','servicios')+' de '+plEs(m.partners,'socio','socios')+' en '+m.categories.length+' categorías',
+    zoomOut:'Alejar', closeChart:'Cerrar gráfico', close:'Cerrar', aria: n => 'Gráfico de servicios de '+n, category:'Categoría', ovr:'Resumen',
+    select:'Selecciona una categoría o un servicio', benefit:'Beneficio para el usuario', scope:'Alcance geográfico', scopeFmt: fmtScopeEs, setup: k => SETUP_ES[k] || k }
+};
+
+const MARKETS = [{ id:'UK', name:'United Kingdom', lang:'en' }, { id:'ES', name:'España', lang:'es' }].map(m => {
+  const tr = s => m.lang === 'es' ? (ES_TR[s] || s) : s;
   const categories = dataset.map(cat => ({
-    name: cat.name,
+    key: CATS[cat.name] || 'services',
+    name: tr(cat.name),
     partnerCount: new Set(cat.partners.filter(p => p.amenities.some(x => x.location === m.id)).map(p => p.name)).size,
     amenities: cat.partners.flatMap(p => p.amenities.filter(x => x.location === m.id).map(x => ({
-      name:x.name, partner:p.name, benefit:x.benefit || p.benefit,
-      setup:x.setup, description:x.description || '', scope:x.scope || ''
+      name:tr(x.name), partner:p.name, benefit:tr(x.benefit || p.benefit),
+      setup:x.setup, setupLabel:UI[m.lang].setup(x.setup), description:tr(x.description || ''), scope:x.scope || ''
     })))
   })).filter(c => c.amenities.length);
   const partners = new Set();
   categories.forEach(c => c.amenities.forEach(x => partners.add(x.partner)));
-  return Object.assign({}, m, { categories, partners: partners.size, count: categories.reduce((n, c) => n + c.amenities.length, 0) });
+  return Object.assign({}, m, { t: UI[m.lang], categories, partners: partners.size, count: categories.reduce((n, c) => n + c.amenities.length, 0) });
 });
 
 const S = 600, C = S/2, R0 = 70, R1 = 150, R2 = 272;
@@ -364,9 +459,9 @@ function chart(m){
   const total = cats.reduce((n,c) => n + c.amenities.length, 0), pad = 0.004;
   let out = '', ang = 0;
   cats.forEach(c => {
-    const ci = m.categories.indexOf(c), key = CATS[c.name] || 'services';
+    const ci = m.categories.indexOf(c), key = c.key;
     const span = (c.amenities.length/total)*Math.PI*2, ca0 = ang, ca1 = ang + span;
-    out += '<path data-act="cat" data-c="'+ci+'" d="'+arcPath(R0+2,R1,ca0+pad,ca1-pad)+'" fill="var(--cat-'+key+'-bg)" stroke="var(--cat-'+key+'-fg)" stroke-width="1" opacity="'+(sel && sel.c !== ci ? .45 : 1)+'"><title>'+esc(c.name+' · '+plural(c.partnerCount,'partner','partners')+' · '+plural(c.amenities.length,'amenity','amenities'))+'</title></path>';
+    out += '<path data-act="cat" data-c="'+ci+'" d="'+arcPath(R0+2,R1,ca0+pad,ca1-pad)+'" fill="var(--cat-'+key+'-bg)" stroke="var(--cat-'+key+'-fg)" stroke-width="1" opacity="'+(sel && sel.c !== ci ? .45 : 1)+'"><title>'+esc(c.name+' · '+m.t.plP(c.partnerCount)+' · '+m.t.plA(c.amenities.length))+'</title></path>';
     out += radialLabel(c.name, R0+2, R1, ca0, ca1, 13, 700, 'var(--cat-'+key+'-fg)');
     c.amenities.forEach((am, ai) => {
       const a0 = ang + (ai/c.amenities.length)*span, a1 = ang + ((ai+1)/c.amenities.length)*span;
@@ -379,30 +474,30 @@ function chart(m){
   const rf = 40;
   out += '<g data-act="center" style="cursor:pointer"><circle cx="'+C+'" cy="'+C+'" r="'+(R0-4)+'" fill="var(--dash-tint)"/>'
     + '<svg x="'+(C-rf)+'" y="'+(C-rf-(z != null ? 8 : 0))+'" width="'+(rf*2)+'" height="'+(rf*2)+'" viewBox="0 0 60 60"><defs><clipPath id="cf-'+m.id+'"><circle cx="30" cy="30" r="30"/></clipPath></defs><g clip-path="url(#cf-'+m.id+')">'+FLAGS[m.id]+'</g><circle cx="30" cy="30" r="29.6" fill="none" stroke="rgba(25,28,37,.18)" stroke-width=".8"/></svg>'
-    + (z != null ? '<text x="'+C+'" y="'+(C+rf-2)+'" text-anchor="middle" dominant-baseline="central" style="font-size:11px;fill:var(--dash-muted)">Zoom out</text>' : '')
-    + '<title>'+(z != null ? 'Zoom out' : 'Close chart')+'</title></g>';
-  return '<svg viewBox="0 0 '+S+' '+S+'" role="img" aria-label="'+esc(m.name)+' amenities sunburst">'+out+'</svg>';
+    + (z != null ? '<text x="'+C+'" y="'+(C+rf-2)+'" text-anchor="middle" dominant-baseline="central" style="font-size:11px;fill:var(--dash-muted)">'+m.t.zoomOut+'</text>' : '')
+    + '<title>'+(z != null ? m.t.zoomOut : m.t.closeChart)+'</title></g>';
+  return '<svg viewBox="0 0 '+S+' '+S+'" role="img" aria-label="'+esc(m.t.aria(m.name))+'">'+out+'</svg>';
 }
 
 function detail(m){
   const z = state.zoom[m.id], sel = state.sel[m.id];
   const chip = (txt, key) => '<span class="chip" style="background:var(--cat-'+key+'-bg);color:var(--cat-'+key+'-fg)">'+esc(txt)+'</span>';
   if (sel){
-    const c = m.categories[sel.c], am = c.amenities[sel.a], key = CATS[c.name] || 'services';
-    return '<div class="dh">'+chip(c.name,key)+'<span class="sub">'+esc(am.setup)+'</span></div>'
+    const c = m.categories[sel.c], am = c.amenities[sel.a], key = c.key;
+    return '<div class="dh">'+chip(c.name,key)+'<span class="sub">'+esc(am.setupLabel)+'</span></div>'
       + '<div class="dt">'+esc(am.name)+'</div>'
       + (am.description ? '<p class="dd">'+esc(am.description)+'</p>' : '')
-      + '<div class="rows r3"><div><small>User benefit</small><strong>'+esc(am.benefit)+'</strong></div>'+(am.scope ? '<div class="span2"><small>Geographic scope</small><strong>'+esc(fmtScope(am.scope))+'</strong></div>' : '')+'</div>';
+      + '<div class="rows r3"><div><small>'+esc(m.t.benefit)+'</small><strong>'+esc(am.benefit)+'</strong></div>'+(am.scope ? '<div class="span2"><small>'+esc(m.t.scope)+'</small><strong>'+esc(m.t.scopeFmt(am.scope))+'</strong></div>' : '')+'</div>';
   }
   if (z != null){
-    const c = m.categories[z], key = CATS[c.name] || 'services';
+    const c = m.categories[z], key = c.key;
     const rows = Object.keys(WAYS).map(w => [w, c.amenities.filter(x => x.setup === w).length]).filter(r => r[1] > 0);
-    return '<div class="dh">'+chip('Category',key)+'<span class="sub">'+plural(c.partnerCount,'partner','partners')+' · '+plural(c.amenities.length,'amenity','amenities')+'</span></div>'
+    return '<div class="dh">'+chip(m.t.category,key)+'<span class="sub">'+m.t.plP(c.partnerCount)+' · '+m.t.plA(c.amenities.length)+'</span></div>'
       + '<div class="dt">'+esc(c.name)+'</div>'
-      + '<div class="rows">'+rows.map(r => '<div><small>'+esc(r[0])+'</small><strong>'+r[1]+'</strong></div>').join('')+'</div>';
+      + '<div class="rows">'+rows.map(r => '<div><small>'+esc(m.t.setup(r[0]))+'</small><strong>'+r[1]+'</strong></div>').join('')+'</div>';
   }
-  return '<div class="dh">'+chip('Overview','services')+'<span class="sub">Select a category or amenity</span></div>'
-    + '<div class="dt">'+plural(m.count,'amenity','amenities')+' from '+plural(m.partners,'partner','partners')+' across '+m.categories.length+' categories</div>';
+  return '<div class="dh">'+chip(m.t.ovr,'services')+'<span class="sub">'+esc(m.t.select)+'</span></div>'
+    + '<div class="dt">'+m.t.overview(m)+'</div>';
 }
 
 function render(){
@@ -411,12 +506,12 @@ function render(){
   const counts = {};
   MARKETS.forEach(m => m.categories.forEach(c => c.amenities.forEach(a => { counts[a.setup] = (counts[a.setup]||0) + 1; })));
   document.getElementById('legend').innerHTML = '<b>Setup</b>' + Object.keys(WAYS).filter(k => counts[k]).map(k =>
-    '<span><i style="background:'+WAYS[k]+'"></i>'+esc(k)+' <em>'+counts[k]+'</em></span>').join('');
+    '<span><i style="background:'+WAYS[k]+'"></i>'+esc(k)+(SETUP_ES[k] && SETUP_ES[k] !== k ? ' · '+esc(SETUP_ES[k]) : '')+' <em>'+counts[k]+'</em></span>').join('');
   const open = MARKETS.filter(m => state.open[m.id]);
   document.getElementById('none').hidden = open.length > 0;
   document.getElementById('grid').innerHTML = open.map(m =>
-    '<article data-m="'+m.id+'"><div class="ah"><div><h2>'+flagSvg(m.id,28)+esc(m.name)+'</h2><span class="s">'+plural(m.partners,'partner','partners')+' · '+plural(m.count,'amenity','amenities')+'</span></div>'
-    + '<button class="x" data-act="close" aria-label="Close">&times;</button></div>'
+    '<article data-m="'+m.id+'"><div class="ah"><div><h2>'+flagSvg(m.id,28)+esc(m.name)+'</h2><span class="s">'+m.t.plP(m.partners)+' · '+m.t.plA(m.count)+'</span></div>'
+    + '<button class="x" data-act="close" aria-label="'+esc(m.t.close)+'">&times;</button></div>'
     + '<div class="chart">'+chart(m)+'</div><div class="detail">'+detail(m)+'</div></article>').join('');
 }
 
