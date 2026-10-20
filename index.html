@@ -62,6 +62,27 @@ article{background:var(--white);border:1px solid var(--dash-line);border-radius:
 .chart svg{display:block;width:100%;overflow:visible;font-family:var(--font-ui)}
 .chart path{cursor:pointer;transition:opacity .2s}
 .chart path:hover{filter:brightness(1.06)}
+.vt .btn{padding:0 16px}
+.agrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+.acard{background:var(--dash-tint);border-radius:var(--radius-lg);padding:16px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.acard .nm{font-family:var(--font-display);font-weight:700;font-size:16px;color:var(--deck-ink)}
+.acard .ds{margin:0;font-size:14px;line-height:1.4;color:var(--dash-muted)}
+.acard .kv{display:flex;flex-direction:column;gap:2px;font-size:13px;color:var(--dash-muted)}
+.acard .kv strong{font-size:14px;color:var(--deck-ink);font-weight:500}
+.acard .sp{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--dash-muted)}
+.acard .sp i{width:10px;height:10px;border-radius:3px;display:block}
+.cathead{margin:4px 0 8px;display:flex;align-items:center;gap:8px}
+.cathead+.agrid{margin-bottom:12px}
+.tw{overflow-x:auto}
+table.alist{width:100%;border-collapse:collapse;font-size:14px;min-width:640px}
+.alist th{position:sticky;top:0;text-align:left;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--dash-muted);background:var(--dash-tint);padding:10px 12px;font-weight:700}
+.alist td{padding:10px 12px;border-top:1px solid var(--dash-line);vertical-align:top;color:var(--deck-ink)}
+.alist td.mu{color:var(--dash-muted)}
+.alist td.mu{min-width:220px}
+.grid.one{grid-template-columns:1fr}
+.alist .sp{display:flex;align-items:center;gap:6px;white-space:nowrap}
+.alist .sp i{width:10px;height:10px;border-radius:3px;display:block}
+.alist .chip{white-space:nowrap}
 .detail{background:var(--dash-tint);border-radius:var(--radius-lg);padding:20px;display:flex;flex-direction:column;gap:12px;min-height:112px}
 .chip{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:4px 10px;border-radius:999px}
 .dh{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -89,6 +110,7 @@ article{background:var(--white);border:1px solid var(--dash-line);border-radius:
       <p>Category on the inner ring, amenity on the outer ring, coloured by setup. Click a category to zoom in and an amenity for its description, user benefit and geographic scope. Click the flag in the centre to zoom out, then to close the wheel.</p>
     </div>
     <div class="mk"><span class="lbl">Markets</span><div class="btns" id="toggles"></div></div>
+    <div class="mk"><span class="lbl">View</span><div class="btns vt" id="viewtoggle"></div></div>
   </section>
   <div class="legend" id="legend"></div>
   <div id="none" class="none" hidden>Select a market above to open its sunburst.</div>
@@ -398,11 +420,11 @@ const UI = {
   en: { plP: n => plural(n,'partner','partners'), plA: n => plural(n,'amenity','amenities'),
     overview: m => plural(m.count,'amenity','amenities')+' from '+plural(m.partners,'partner','partners')+' across '+m.categories.length+' categories',
     zoomOut:'Zoom out', closeChart:'Close chart', close:'Close', aria: n => n+' amenities sunburst', category:'Category', ovr:'Overview',
-    select:'Select a category or amenity', benefit:'User benefit', scope:'Geographic scope', scopeFmt: fmtScope, setup: k => k },
+    select:'Select a category or amenity', colAmenity:'Amenity', colSetup:'Setup', colDesc:'Description', benefit:'User benefit', scope:'Geographic scope', scopeFmt: fmtScope, setup: k => k },
   es: { plP: n => plEs(n,'socio','socios'), plA: n => plEs(n,'servicio','servicios'),
     overview: m => plEs(m.count,'servicio','servicios')+' de '+plEs(m.partners,'socio','socios')+' en '+m.categories.length+' categorías',
     zoomOut:'Alejar', closeChart:'Cerrar gráfico', close:'Cerrar', aria: n => 'Gráfico de servicios de '+n, category:'Categoría', ovr:'Resumen',
-    select:'Selecciona una categoría o un servicio', benefit:'Beneficio para el usuario', scope:'Alcance geográfico', scopeFmt: fmtScopeEs, setup: k => SETUP_ES[k] || k }
+    select:'Selecciona una categoría o un servicio', colAmenity:'Servicio', colSetup:'Modalidad', colDesc:'Descripción', benefit:'Beneficio para el usuario', scope:'Alcance geográfico', scopeFmt: fmtScopeEs, setup: k => SETUP_ES[k] || k }
 };
 
 const MARKETS = [{ id:'UK', name:'United Kingdom', lang:'en' }, { id:'ES', name:'España', lang:'es' }].map(m => {
@@ -461,7 +483,36 @@ function radialLabel(name, r0, r1, a0, a1, fontSize, weight, fill){
     + lines.map((l,i) => '<tspan x="'+x+'" y="'+(y+off+i*lh)+'" dominant-baseline="central">'+esc(l)+'</tspan>').join('') + '</text>';
 }
 
-const state = { open:{UK:true, ES:true}, zoom:{}, sel:{} };
+const state = { open:{UK:true, ES:true}, zoom:{}, sel:{}, view:'circle' };
+
+function chipHtml(txt, key){ return '<span class="chip" style="background:var(--cat-'+key+'-bg);color:var(--cat-'+key+'-fg)">'+esc(txt)+'</span>'; }
+function gridHtml(m){
+  return m.categories.map(c =>
+    '<div class="cathead">'+chipHtml(c.name, c.key)+'<span style="font-size:13px;color:var(--dash-muted)">'+m.t.plA(c.amenities.length)+'</span></div>'
+    + '<div class="agrid">' + c.amenities.map(am =>
+      '<div class="acard"><div class="nm">'+esc(am.name)+'</div>'
+      + '<div class="sp"><i style="background:'+WAYS[am.setup]+'"></i>'+esc(am.setupLabel)+'</div>'
+      + (am.description ? '<p class="ds">'+esc(am.description)+'</p>' : '')
+      + '<div class="kv"><span>'+esc(m.t.benefit)+'</span><strong>'+esc(am.benefit)+'</strong></div>'
+      + (am.scope ? '<div class="kv"><span>'+esc(m.t.scope)+'</span><strong>'+esc(m.t.scopeFmt(am.scope))+'</strong></div>' : '')
+      + '</div>').join('') + '</div>').join('');
+}
+function listHtml(m){
+  let rows = '';
+  m.categories.forEach(c => c.amenities.forEach(am => {
+    rows += '<tr><td><strong>'+esc(am.name)+'</strong></td><td>'+chipHtml(c.name, c.key)+'</td>'
+      + '<td><span class="sp"><i style="background:'+WAYS[am.setup]+'"></i>'+esc(am.setupLabel)+'</span></td>'
+      + '<td class="mu">'+esc(am.description)+'</td><td>'+esc(am.benefit)+'</td><td>'+esc(m.t.scopeFmt(am.scope))+'</td></tr>';
+  }));
+  return '<div class="tw"><table class="alist"><thead><tr><th>'+esc(m.t.colAmenity)+'</th><th>'+esc(m.t.category)+'</th><th>'+esc(m.t.colSetup)+'</th><th>'+esc(m.t.colDesc)+'</th><th>'+esc(m.t.benefit)+'</th><th>'+esc(m.t.scope)+'</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+}
+function bodyFor(m){
+  if (state.view === 'grid') return gridHtml(m);
+  if (state.view === 'list') return listHtml(m);
+  return '<div class="chart">'+chart(m)+'</div><div class="detail">'+detail(m)+'</div>';
+}
+const VIEWS = [['circle','Circle'],['grid','Grid'],['list','List']];
+
 
 function chart(m){
   const z = state.zoom[m.id], sel = state.sel[m.id];
@@ -511,6 +562,8 @@ function detail(m){
 }
 
 function render(){
+  document.getElementById('grid').className = state.view === 'circle' ? 'grid' : 'grid one';
+  document.getElementById('viewtoggle').innerHTML = VIEWS.map(v => '<button class="btn'+(state.view === v[0] ? ' on' : '')+'" data-act="view" data-v="'+v[0]+'">'+v[1]+'</button>').join('');
   document.getElementById('toggles').innerHTML = MARKETS.map(m =>
     '<button class="btn'+(state.open[m.id] ? ' on' : '')+'" data-act="toggle" data-m="'+m.id+'">'+flagSvg(m.id,24)+'<span>'+esc(m.name)+'</span><span class="n">'+m.count+'</span></button>').join('');
   const counts = {};
@@ -522,7 +575,7 @@ function render(){
   document.getElementById('grid').innerHTML = open.map(m =>
     '<article data-m="'+m.id+'"><div class="ah"><div><h2>'+flagSvg(m.id,28)+esc(m.name)+'</h2><span class="s">'+m.t.plP(m.partners)+' · '+m.t.plA(m.count)+'</span></div>'
     + '<button class="x" data-act="close" aria-label="'+esc(m.t.close)+'">&times;</button></div>'
-    + '<div class="chart">'+chart(m)+'</div><div class="detail">'+detail(m)+'</div></article>').join('');
+    + bodyFor(m)+'</article>').join('');
 }
 
 function toggle(id){ state.open[id] = !state.open[id]; state.zoom[id] = null; state.sel[id] = null; render(); }
@@ -530,6 +583,7 @@ document.addEventListener('click', e => {
   const el = e.target.closest('[data-act]');
   if (!el) return;
   const art = el.closest('article'), id = art ? art.dataset.m : null, act = el.dataset.act;
+  if (act === 'view'){ state.view = el.dataset.v; return render(); }
   if (act === 'toggle') return toggle(el.dataset.m);
   if (act === 'close') return toggle(id);
   if (act === 'cat'){ state.zoom[id] = +el.dataset.c; state.sel[id] = null; return render(); }
